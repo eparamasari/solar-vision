@@ -252,65 +252,73 @@ if page == 'Energy Community Recommendations':
     if street == "":
         st.write("Please enter your address above to get results.")
     else:
-        # Do calculations
-        n_households, n_solar_panels, startup_cost, annualised_profit, carbon = calculate_benefits(energy_communities, energy_consumption, street)
+        try:
+            # Do calculations
+            n_households, n_solar_panels, startup_cost, annualised_profit, carbon = calculate_benefits(energy_communities, energy_consumption, street)
 
-        # Round up
-        startup_cost = round(startup_cost, 2)
-        annualised_profit = round(annualised_profit, 2)
-        carbon = round(carbon, 2)
-        trees = int(round(carbon/21, 0))
+            # Round up
+            startup_cost = round(startup_cost, 2)
+            annualised_profit = round(annualised_profit, 2)
+            carbon = round(carbon, 2)
+            trees = int(round(carbon/21, 0))
 
-        # Show metrics in columns
-        col1, col2, col3 = st.columns(3)
-        col1.metric(label="Community Members", value=(round(n_households, 2)))
-        col2.metric(label="Solar Panels", value=n_solar_panels)
-        col3.metric(label="Initial Investment (€)", value=startup_cost)
+            # Show metrics in columns
+            col1, col2, col3 = st.columns(3)
+            col1.metric(label="Community Members", value=(round(n_households, 2)))
+            col2.metric(label="Solar Panels", value=n_solar_panels)
+            col3.metric(label="Initial Investment (€)", value=startup_cost)
 
-        col4, col5, col6 = st.columns(3)
-        col4.metric(label="Net Savings (€)", value=annualised_profit)
-        col5.metric(label="Emissions Reduction (kg CO2)", value=carbon)
-        col6.metric(label="Emissions Reduction (trees)", value=trees)
+            col4, col5, col6 = st.columns(3)
+            col4.metric(label="Net Savings (€)", value=annualised_profit)
+            col5.metric(label="Emissions Reduction (kg CO2)", value=carbon)
+            col6.metric(label="Emissions Reduction (trees)", value=trees)
 
-        # Print
-        text_1 = f"Great news! We have found an energy community for you.\nWe suggest partnering with {n_households-1} of your neighbours and installing solar panels at {n_solar_panels} locations together. Don't worry, we can help with that."
-        text_2 = f"For an initial investment of €{startup_cost:,.2f}, you could see net savings of €{annualised_profit:,.2f} per year over the next 20 years."
-        text_3 = f"Your household could also reduce carbon emissions by {carbon:.1f} kg CO2 per year: that's similar to the carbon emissions reduced by {carbon/21:.0f} mature trees for a year."
-        
-        if language_selection == 'en':
-            st.write(text_1 + text_2 + text_3)
-        else:
-            st.write(translate_text(text_1 + text_2 + text_3, language_selection))
-        
-        # Plot map with energy communities
+            # Print
+            text_1 = f"Great news! We have found an energy community for you.\nWe suggest partnering with {n_households-1} of your neighbours and installing solar panels at {n_solar_panels} locations together. Don't worry, we can help with that."
+            text_2 = f"For an initial investment of €{startup_cost:,.2f}, you could see net savings of €{annualised_profit:,.2f} per year over the next 20 years."
+            text_3 = f"Your household could also reduce carbon emissions by {carbon:.1f} kg CO2 per year: that's similar to the carbon emissions reduced by {carbon/21:.0f} mature trees for a year."
+            
+            if language_selection == 'en':
+                st.write(text_1 + text_2 + text_3)
+            else:
+                st.write(translate_text(text_1 + text_2 + text_3, language_selection))
+            
 
-        # Plot Ghent
-        ghent_map = folium.Map(location=[51.0540, 3.6980], width="80%", height="80%", zoom_start=15)
+            # Plot map with energy communities
 
-       # Choose an energy community
-        street = street
-        hhld_id = choose_household(energy_consumption, street)
-        ec_id, hhld_loc = find_household(energy_communities, hhld_id)
-        ec = energy_communities.loc[ec_id]
+            # Plot Ghent
+            ghent_map = folium.Map(location=[51.0540, 3.6980], width="80%", height="80%", zoom_start=15)
 
-        # Plot proposed member locations
-        for hh in ec["households"]:
-            # Plot a pin for each solar panel
-            folium.Marker(
-                location=[energy_consumption.loc[hh, "latitude"], energy_consumption.loc[hh, "longitude"]],
-                icon=folium.Icon(color="blue", icon="home")
-                ).add_to(ghent_map)
+            # Choose an energy community
+            street = street
+            hhld_id = choose_household(energy_consumption, street)
+            ec_id, hhld_loc = find_household(energy_communities, hhld_id)
+            ec = energy_communities.loc[ec_id]
 
-        # Plot proposed solar panel locations
-        for pv in range(len(ec["pv_latitude"])):
-            # Plot a pin for each solar panel
-            folium.Marker(
-                location=[ec["pv_latitude"][pv], ec["pv_longitude"][pv]],
-                icon=folium.Icon(color="green", icon="solar-panel", prefix="fa")
-                ).add_to(ghent_map)
+            # Plot proposed member locations
+            for hh in ec["households"]:
+                # Plot a pin for each solar panel
+                folium.Marker(
+                    location=[energy_consumption.loc[hh, "latitude"], energy_consumption.loc[hh, "longitude"]],
+                    icon=folium.Icon(color="blue", icon="home")
+                    ).add_to(ghent_map)
 
-        st_data = st_folium(ghent_map, width=800)
+            # Plot proposed solar panel locations
+            for pv in range(len(ec["pv_latitude"])):
+                # Plot a pin for each solar panel
+                folium.Marker(
+                    location=[ec["pv_latitude"][pv], ec["pv_longitude"][pv]],
+                    icon=folium.Icon(color="green", icon="solar-panel", prefix="fa")
+                    ).add_to(ghent_map)
 
+            st_data = st_folium(ghent_map, width=800)
+
+        except Exception as ex:
+            error_message = "Street not found!"
+            if language_selection == 'en':
+                st.write(error_message)
+            else:
+                st.write(translate_text(error_message, language_selection))
 
 
 elif page == 'Useful Links':
